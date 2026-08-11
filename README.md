@@ -51,6 +51,13 @@ The Playwright script uses the locally installed Google Chrome and performs a fu
 - Responsive 16:10 canvas with keyboard and touch controls
 - No server, account, or API required to play
 
+## Design documents
+
+- [`docs/MVP_SPEC.md`](docs/MVP_SPEC.md) — six-level competition build, scoring, tutorial, audio, judge demo flow
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — accepted replay architecture and guardrails
+- [`docs/CODEX_LOG.md`](docs/CODEX_LOG.md) — human decisions and Codex-assisted implementation record
+- [`docs/SUBMISSION.md`](docs/SUBMISSION.md) — judging alignment and scope guard
+
 ## Scope toward submission
 
 - [x] Core record/replay mechanic
