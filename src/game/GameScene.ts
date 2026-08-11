@@ -54,7 +54,13 @@ export class GameScene extends Phaser.Scene {
   private started = false;
   private doorOpen = false;
   private doorVisual!: Phaser.GameObjects.Rectangle;
+  private doorSegments: Phaser.GameObjects.Rectangle[] = [];
+  private powerWire!: Phaser.GameObjects.Graphics;
+  private wirePulse!: Phaser.GameObjects.Arc;
   private switchVisual!: Phaser.GameObjects.Arc;
+  private exitCore!: Phaser.GameObjects.Rectangle;
+  private trailGraphics!: Phaser.GameObjects.Graphics;
+  private playerTrail: { x: number; y: number }[] = [];
   private timerText!: Phaser.GameObjects.Text;
   private echoText!: Phaser.GameObjects.Text;
   private objectiveText!: Phaser.GameObjects.Text;
@@ -110,6 +116,8 @@ export class GameScene extends Phaser.Scene {
     this.doorOpen = this.isSwitchPressed();
     this.updateDoor();
     this.movePlayer();
+    this.updatePlayerTrail();
+    this.updateWirePulse();
 
     this.timeline.record({
       x: this.player.root.x,
@@ -178,6 +186,8 @@ export class GameScene extends Phaser.Scene {
     const ghost = this.createActor(spawnPoint.x, spawnPoint.y, colors.cyan, 0.52);
     this.ghosts.push(ghost);
     this.player.root.setPosition(spawnPoint.x, spawnPoint.y);
+    this.playerTrail = [];
+    this.trailGraphics.clear();
     this.tick = 0;
     this.accumulator = 0;
     this.echoText.setText(String(this.timeline.echoCount).padStart(2, '0'));
@@ -197,6 +207,8 @@ export class GameScene extends Phaser.Scene {
     this.ghosts.forEach((ghost) => ghost.root.destroy());
     this.ghosts = [];
     this.player.root.setPosition(spawnPoint.x, spawnPoint.y);
+    this.playerTrail = [];
+    this.trailGraphics.clear();
     this.tick = 0;
     this.accumulator = 0;
     this.won = false;
@@ -247,47 +259,113 @@ export class GameScene extends Phaser.Scene {
 
   private drawWorld(): void {
     this.add.rectangle(WIDTH / 2, 325, 900, 486, colors.floor).setStrokeStyle(2, colors.grid);
-    const grid = this.add.graphics().setAlpha(0.35);
+
+    // Separate the room into readable functional bays without adding asset weight.
+    this.add.rectangle(275, 325, 430, 432, 0x0b1425, 0.42).setStrokeStyle(1, 0x1b3550, 0.45);
+    this.add.rectangle(695, 325, 332, 432, 0x0d1627, 0.38).setStrokeStyle(1, 0x1b3550, 0.45);
+    this.add.text(66, 110, 'ANCHOR BAY // A-01', {
+      fontFamily: '"Space Mono", monospace', fontSize: '9px', color: '#36516f',
+    });
+    this.add.text(788, 110, 'RELAY // EXIT', {
+      fontFamily: '"Space Mono", monospace', fontSize: '9px', color: '#36516f',
+    });
+
+    const grid = this.add.graphics().setAlpha(0.32);
     grid.lineStyle(1, colors.grid);
     for (let x = 50; x < 910; x += 32) grid.lineBetween(x, 92, x, 558);
     for (let y = 92; y < 558; y += 32) grid.lineBetween(50, y, 910, y);
 
+    const floorDetail = this.add.graphics().setAlpha(0.5);
+    floorDetail.lineStyle(1, 0x29415d, 0.7);
+    for (let x = 82; x < 900; x += 96) {
+      floorDetail.lineBetween(x, 548, x + 18, 548);
+      floorDetail.lineBetween(x, 548, x, 540);
+    }
+    for (let index = 0; index < 24; index += 1) {
+      const x = 66 + ((index * 137) % 820);
+      const y = 112 + ((index * 83) % 416);
+      this.add.circle(x, y, index % 3 === 0 ? 1.5 : 1, 0x6c91b4, 0.18);
+    }
+
+    this.powerWire = this.add.graphics().setDepth(2);
+    this.drawPowerWire(false);
+    this.wirePulse = this.add.circle(switchPoint.x, switchPoint.y, 4, colors.cyan, 0.95).setDepth(3).setVisible(false);
+
     walls.forEach((wall) => {
       this.add
         .rectangle(wall.x + wall.width / 2, wall.y + wall.height / 2, wall.width, wall.height, colors.wall)
-        .setStrokeStyle(2, colors.wallEdge);
+        .setStrokeStyle(2, colors.wallEdge)
+        .setDepth(3);
+      this.add.circle(wall.x + 7, wall.y + 7, 2, 0x8ba4bd, 0.45).setDepth(4);
+      this.add.circle(wall.x + wall.width - 7, wall.y + wall.height - 7, 2, 0x8ba4bd, 0.35).setDepth(4);
     });
 
+    this.add.rectangle(493, door.y + door.height / 2, 8, door.height + 20, 0x18263b).setStrokeStyle(1, 0x557395).setDepth(4);
+    this.add.rectangle(535, door.y + door.height / 2, 8, door.height + 20, 0x18263b).setStrokeStyle(1, 0x557395).setDepth(4);
     this.doorVisual = this.add
       .rectangle(door.x + door.width / 2, door.y + door.height / 2, door.width, door.height, colors.rose)
       .setStrokeStyle(2, 0xff9bb8)
       .setDepth(5);
+    this.doorSegments = Array.from({ length: 4 }, (_, index) =>
+      this.add
+        .rectangle(door.x + door.width / 2, door.y + 11 + index * 19, 22, 15, colors.rose, 0.95)
+        .setStrokeStyle(1, 0xffa5be, 0.8)
+        .setDepth(6),
+    );
+    this.add.text(514, 389, 'T-GATE', {
+      fontFamily: '"Space Mono", monospace', fontSize: '8px', color: '#6f87a1',
+    }).setOrigin(0.5).setDepth(5);
 
-    this.switchVisual = this.add.circle(switchPoint.x, switchPoint.y, 27, 0x132c38).setStrokeStyle(3, colors.cyan);
-    this.add.circle(switchPoint.x, switchPoint.y, 10, colors.cyan, 0.55);
+    this.add.circle(switchPoint.x, switchPoint.y, 34, 0x07121d, 0.9).setStrokeStyle(1, 0x315a70, 0.8).setDepth(4);
+    this.switchVisual = this.add.circle(switchPoint.x, switchPoint.y, 27, 0x132c38).setStrokeStyle(3, colors.cyan).setDepth(5);
+    this.add.circle(switchPoint.x, switchPoint.y, 18, 0x0c2430, 0.9).setStrokeStyle(1, colors.cyan, 0.45).setDepth(5);
+    this.add.circle(switchPoint.x, switchPoint.y, 9, colors.cyan, 0.6).setDepth(6);
+    const plateTicks = this.add.graphics().setDepth(5);
+    plateTicks.lineStyle(2, colors.cyan, 0.55);
+    for (let index = 0; index < 12; index += 1) {
+      const angle = (Math.PI * 2 * index) / 12;
+      plateTicks.lineBetween(
+        switchPoint.x + Math.cos(angle) * 30,
+        switchPoint.y + Math.sin(angle) * 30,
+        switchPoint.x + Math.cos(angle) * 34,
+        switchPoint.y + Math.sin(angle) * 34,
+      );
+    }
     this.add
       .text(switchPoint.x, switchPoint.y - 46, 'ECHO PLATE', {
         fontFamily: '"Space Mono", monospace',
         fontSize: '11px',
         color: '#55f6ff',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(6);
 
-    this.add.rectangle(exitPoint.x, exitPoint.y, 54, 70, 0x15382a, 0.75).setStrokeStyle(3, colors.lime);
+    this.add.rectangle(exitPoint.x, exitPoint.y, 68, 86, 0x07180f, 0.7).setStrokeStyle(1, 0x3f7555, 0.55).setDepth(4);
+    this.add.rectangle(exitPoint.x, exitPoint.y, 58, 76, 0x102c20, 0.72).setStrokeStyle(2, colors.lime, 0.8).setDepth(5);
+    this.exitCore = this.add.rectangle(exitPoint.x, exitPoint.y, 42, 58, 0x1c5d3b, 0.28).setStrokeStyle(1, 0xc1ffc2, 0.55).setDepth(5);
+    this.add.line(exitPoint.x - 40, exitPoint.y, 0, -34, 0, 34, colors.lime, 0.35).setLineWidth(2).setDepth(5);
+    this.add.line(exitPoint.x + 40, exitPoint.y, 0, -34, 0, 34, colors.lime, 0.35).setLineWidth(2).setDepth(5);
+    this.tweens.add({ targets: this.exitCore, alpha: 0.65, duration: 800, yoyo: true, repeat: -1 });
     this.add
       .text(exitPoint.x, exitPoint.y - 50, 'EXIT', {
         fontFamily: '"Space Mono", monospace',
         fontSize: '12px',
         color: '#8dff8a',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(6);
+
+    this.trailGraphics = this.add.graphics().setDepth(9);
   }
 
   private createActor(x: number, y: number, color: number, alpha: number): ActorView {
-    const glow = this.add.circle(0, 0, 24, color, 0.2);
-    const core = this.add.rectangle(0, 0, 22, 22, color, 0.92).setRotation(Math.PI / 4);
-    const eye = this.add.rectangle(5, -5, 5, 5, 0xffffff, 0.9);
-    const root = this.add.container(x, y, [glow, core, eye]).setAlpha(alpha).setDepth(10);
+    const glow = this.add.circle(0, 0, 27, color, 0.14);
+    const orbit = this.add.circle(0, 0, 19, 0x000000, 0).setStrokeStyle(1, color, 0.42);
+    const core = this.add.rectangle(0, 0, 22, 22, color, 0.94).setRotation(Math.PI / 4);
+    const inset = this.add.rectangle(0, 0, 10, 10, 0x0a1420, 0.3).setRotation(Math.PI / 4);
+    const eye = this.add.rectangle(5, -5, 5, 5, 0xffffff, 0.95);
+    const marker = this.add.rectangle(-14, 0, 4, 10, color, 0.7);
+    const root = this.add.container(x, y, [glow, orbit, core, inset, eye, marker]).setAlpha(alpha).setDepth(10);
     return { root, glow };
   }
 
@@ -358,9 +436,70 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateDoor(): void {
-    this.doorVisual.setFillStyle(this.doorOpen ? colors.cyan : colors.rose, this.doorOpen ? 0.12 : 0.92);
-    this.doorVisual.setStrokeStyle(2, this.doorOpen ? colors.cyan : 0xff9bb8, this.doorOpen ? 0.45 : 1);
+    this.doorVisual.setFillStyle(this.doorOpen ? colors.cyan : colors.rose, this.doorOpen ? 0.05 : 0.32);
+    this.doorVisual.setStrokeStyle(2, this.doorOpen ? colors.cyan : 0xff9bb8, this.doorOpen ? 0.4 : 0.85);
+    this.doorSegments.forEach((segment, index) => {
+      segment.x = this.doorOpen ? (index % 2 === 0 ? 489 : 539) : door.x + door.width / 2;
+      segment.setFillStyle(this.doorOpen ? colors.cyan : colors.rose, this.doorOpen ? 0.18 : 0.95);
+      segment.setStrokeStyle(1, this.doorOpen ? colors.cyan : 0xffa5be, this.doorOpen ? 0.35 : 0.8);
+    });
     this.switchVisual.setFillStyle(this.doorOpen ? 0x1c574e : 0x132c38, 1);
+    this.drawPowerWire(this.doorOpen);
+  }
+
+  private drawPowerWire(active: boolean): void {
+    const points = [
+      new Phaser.Math.Vector2(switchPoint.x, switchPoint.y),
+      new Phaser.Math.Vector2(430, switchPoint.y),
+      new Phaser.Math.Vector2(430, door.y + door.height / 2),
+      new Phaser.Math.Vector2(door.x, door.y + door.height / 2),
+    ];
+    this.powerWire.clear();
+    this.powerWire.lineStyle(7, active ? colors.cyan : 0x162b40, active ? 0.1 : 0.32);
+    this.powerWire.strokePoints(points, false, false);
+    this.powerWire.lineStyle(2, active ? colors.cyan : 0x34516c, active ? 0.85 : 0.42);
+    this.powerWire.strokePoints(points, false, false);
+    for (const point of points.slice(1, -1)) {
+      this.powerWire.fillStyle(active ? colors.cyan : 0x45627d, active ? 0.75 : 0.45);
+      this.powerWire.fillCircle(point.x, point.y, 4);
+      this.powerWire.lineStyle(1, active ? 0xbaffff : 0x6b86a0, 0.6);
+      this.powerWire.strokeCircle(point.x, point.y, 7);
+    }
+  }
+
+  private updateWirePulse(): void {
+    this.wirePulse.setVisible(this.doorOpen);
+    if (!this.doorOpen) return;
+
+    const first = 430 - switchPoint.x;
+    const second = door.y + door.height / 2 - switchPoint.y;
+    const third = door.x - 430;
+    const total = first + second + third;
+    let distance = (this.tick * 7) % total;
+
+    if (distance <= first) {
+      this.wirePulse.setPosition(switchPoint.x + distance, switchPoint.y);
+      return;
+    }
+    distance -= first;
+    if (distance <= second) {
+      this.wirePulse.setPosition(430, switchPoint.y + distance);
+      return;
+    }
+    distance -= second;
+    this.wirePulse.setPosition(430 + Math.min(distance, third), door.y + door.height / 2);
+  }
+
+  private updatePlayerTrail(): void {
+    this.playerTrail.push({ x: this.player.root.x, y: this.player.root.y });
+    if (this.playerTrail.length > 10) this.playerTrail.shift();
+
+    this.trailGraphics.clear();
+    this.playerTrail.forEach((point, index) => {
+      const progress = (index + 1) / this.playerTrail.length;
+      this.trailGraphics.fillStyle(colors.amber, 0.03 + progress * 0.08);
+      this.trailGraphics.fillCircle(point.x, point.y, 3 + progress * 4);
+    });
   }
 
   private circleHitsRect(cx: number, cy: number, radius: number, rect: Rect): boolean {

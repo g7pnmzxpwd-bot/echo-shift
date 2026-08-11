@@ -40,3 +40,12 @@ This log separates human creative decisions from Codex-assisted implementation f
 - Decide whether future levels emphasize precision, planning, or speed.
 - Select final sound palette and music direction.
 - Approve final level order, trailer cut, and submission copy.
+
+## 2026-08-12 — Environmental detail pass 00.02
+
+- Preserved the dark temporal-lab art direction while increasing environmental specificity.
+- Added functional circuit wiring from the echo plate to the time gate; active state carries a moving energy pulse.
+- Rebuilt the gate as a segmented mechanical barrier that retracts sideways.
+- Added layered plate rings, calibration ticks, wall fasteners, room bay labels, floor particles, and exit aperture framing.
+- Added a restrained amber movement trail and more detailed player/echo silhouettes.
+- Re-ran unit tests, production build, automated completion/restart, and screenshot QA with zero browser errors.
