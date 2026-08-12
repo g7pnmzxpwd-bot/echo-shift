@@ -26,7 +26,8 @@ Every failed run becomes a teammate. Record your movement, reset the timeline, a
 ### Release potential
 
 - Static browser deployment with no login barrier.
-- Level-based structure can expand to daily challenges and user-generated timelines.
+- A complete 36-round campaign is organized into six chapters with persisted local progress.
+- The data-driven level contract supports authored expansion, daily challenges, and future user-generated timelines.
 - Mobile controls are included from the first vertical slice.
 - Hive integration can later provide identity, leaderboards, analytics, and live challenges.
 
@@ -38,7 +39,7 @@ Every failed run becomes a teammate. Record your movement, reset the timeline, a
 
 ## Scope guard
 
-Do not add before the core six-level build is fun:
+The 36-round core campaign is implemented. Before submission, prioritize direct balance, sound, deployment, and presentation rather than adding:
 
 - generative dialogue,
 - inventory or crafting,

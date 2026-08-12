@@ -51,6 +51,10 @@ export class EchoTimeline {
     return true;
   }
 
+  discardCurrent(): void {
+    this.current = [];
+  }
+
   clear(): void {
     this.echoes.length = 0;
     this.current = [];

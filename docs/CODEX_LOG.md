@@ -49,3 +49,37 @@ This log separates human creative decisions from Codex-assisted implementation f
 - Added layered plate rings, calibration ticks, wall fasteners, room bay labels, floor particles, and exit aperture framing.
 - Added a restrained amber movement trail and more detailed player/echo silhouettes.
 - Re-ran unit tests, production build, automated completion/restart, and screenshot QA with zero browser errors.
+
+## 2026-08-12 — Campaign expansion 00.03
+
+### Human-directed decisions
+
+- Expand to 36 rounds rather than pad the game to an arbitrary 40.
+- Organize progression as six chapters of six rounds.
+- Preserve the proven 20 Hz transform replay instead of rewriting to input replay during the competition window.
+- Keep progression local and login-free.
+
+### Codex-assisted work
+
+- Refactored the hardcoded room into a `LevelDefinition`-driven scene.
+- Authored six spatial families covering one through four simultaneous echoes, horizontal and vertical barriers, and staged two-gate dependencies.
+- Added localStorage unlock/completion state and a 36-card campaign matrix.
+- Added player-radius-aware BFS validation for plate and exit reachability.
+- Added representative scene-load smoke tests and real keyboard multi-echo solutions.
+
+### Verification evidence
+
+- Vitest: 9 tests passed across timeline and level-pack contracts.
+- Level pack: 36 unique rounds, six chapters, valid links and geometry.
+- Chrome campaign smoke: rounds 1, 7, 13, 19, 25, 31, and 36 loaded with zero page/console errors.
+- Chrome solved rounds 7, 19, and 36 using two, three, and four committed echoes respectively.
+- A 390×844 touch context solved round 1 through the visible mobile controls and rendered all 36 selector cards.
+- Mobile QA exposed a pointer-capture exception path; capture is now best-effort so touch input is always dispatched.
+- Round 1 keyboard completion and restart regression remained green.
+- TypeScript and Vite production build succeeded.
+
+### Honest limits
+
+- BFS proves static reachability, not enjoyment or ideal difficulty.
+- Three representative multi-echo rounds were solved automatically; the full 36 still require a direct human balance pass.
+- Sound, public deployment, and submission video remain outside this milestone.

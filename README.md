@@ -6,14 +6,18 @@ ECHO//SHIFT is a browser-based time-loop puzzle game. Every shift records the pl
 
 Built for **OpenAI Game Builders Seoul 2026** with Codex.
 
-## Current vertical slice
+## 36-round campaign
 
-The first playable experiment demonstrates the complete core mechanic:
+The playable campaign contains **six chapters of six rounds**:
 
-1. Move onto the **ECHO PLATE**.
-2. Press **Space** to lock the current timeline.
-3. The echo replays the recorded route and holds the plate.
-4. In the new shift, pass through the opened time door and reach the exit.
+1. **Calibration** — one echo and one gate.
+2. **Dual Signal** — two simultaneous plate holds.
+3. **Cross Current** — horizontal barriers and side channels.
+4. **Phase Array** — three echoes and staged gate requirements.
+5. **Time Compression** — two-gate zigzag routes.
+6. **Full Chorus** — four-echo finale rooms.
+
+Completing a round unlocks the next one. Progress is stored locally, and the campaign matrix shows all 36 locked, available, complete, and current states.
 
 ### Controls
 
@@ -37,10 +41,11 @@ Open `http://localhost:5173`.
 ```bash
 npm test
 npm run build
-node scripts/playthrough.mjs
+npm run test:playthrough
+npm run test:campaign
 ```
 
-The Playwright script uses the locally installed Google Chrome and performs a full run: intro → first timeline → echo replay → open door → exit → restart.
+The browser suite uses locally installed Google Chrome. It completes round 1, loads representative rounds from every chapter, validates the 36-card campaign selector, and solves real two-, three-, and four-echo rounds.
 
 ## Technical design
 
@@ -53,7 +58,8 @@ The Playwright script uses the locally installed Google Chrome and performs a fu
 
 ## Design documents
 
-- [`docs/MVP_SPEC.md`](docs/MVP_SPEC.md) — six-level competition build, scoring, tutorial, audio, judge demo flow
+- [`docs/CAMPAIGN.md`](docs/CAMPAIGN.md) — 36-round structure, progression, validation, and QA evidence
+- [`docs/MVP_SPEC.md`](docs/MVP_SPEC.md) — original six-level vertical-slice design that informed the campaign
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — accepted replay architecture and guardrails
 - [`docs/CODEX_LOG.md`](docs/CODEX_LOG.md) — human decisions and Codex-assisted implementation record
 - [`docs/SUBMISSION.md`](docs/SUBMISSION.md) — judging alignment and scope guard
@@ -61,13 +67,14 @@ The Playwright script uses the locally installed Google Chrome and performs a fu
 ## Scope toward submission
 
 - [x] Core record/replay mechanic
-- [x] One complete puzzle
-- [x] Tutorial, win state, restart
+- [x] 36 data-driven rounds in six chapters
+- [x] One- to four-echo plate and staged-gate progression
+- [x] Tutorial, win state, advance, restart, and persisted unlocks
 - [x] Keyboard and touch controls
-- [x] Automated browser playthrough
-- [ ] Level progression and level select
+- [x] Campaign matrix and direct round QA links
+- [x] Static geometry validation and automated browser playthroughs
 - [ ] Sound and music
-- [ ] Additional mechanics: paired plates, moving hazards, limited echo budget
+- [ ] Direct human balance pass across the complete campaign
 - [ ] Production deployment and 3-minute submission video
 
 ## Credits

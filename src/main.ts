@@ -2,12 +2,16 @@ import Phaser from 'phaser';
 
 import './style.css';
 import { GameScene } from './game/GameScene';
+import { LEVELS } from './game/levels/levels';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <main class="shell">
     <header class="masthead">
       <div class="brand"><span class="brand-mark"></span>ECHO//SHIFT</div>
-      <div class="signal"><span></span>TIMELINE LINK ACTIVE</div>
+      <div class="masthead-actions">
+        <button id="rounds-button" class="rounds-button" type="button">ROUNDS <b>01/36</b></button>
+        <div class="signal"><span></span>TIMELINE LINK ACTIVE</div>
+      </div>
     </header>
 
     <section class="game-frame" aria-label="Echo Shift game">
@@ -31,11 +35,23 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
     </section>
 
+    <section id="round-panel" class="round-panel" aria-label="Round select" hidden>
+      <div class="round-panel__header">
+        <div>
+          <span>CAMPAIGN MATRIX</span>
+          <h2>SELECT TIMELINE</h2>
+        </div>
+        <button id="round-panel-close" type="button" aria-label="Close round select">CLOSE ×</button>
+      </div>
+      <div id="round-grid" class="round-grid"></div>
+      <p class="round-panel__hint">Complete a timeline to unlock the next round. Progress is stored on this device.</p>
+    </section>
+
     <footer>
       <p>MOVE <b>WASD / ARROWS</b></p>
       <p>LOCK TIMELINE <b>SPACE</b></p>
       <p>RESTART <b>R</b></p>
-      <p class="build">BUILD 00.01 // CODEX PROTOCOL</p>
+      <p class="build">BUILD 00.03 // 36 TIMELINES</p>
     </footer>
   </main>
 `;
@@ -63,11 +79,90 @@ const config: Phaser.Types.Core.GameConfig = {
 
 new Phaser.Game(config);
 
+type ProgressState = { unlocked: number; completed: number[] };
+const progressKey = 'echo-shift-progress-v1';
+const roundPanel = document.querySelector<HTMLElement>('#round-panel')!;
+const roundGrid = document.querySelector<HTMLElement>('#round-grid')!;
+const roundsButton = document.querySelector<HTMLButtonElement>('#rounds-button')!;
+let currentRound = Math.max(1, Math.min(36, Number(new URLSearchParams(location.search).get('round')) || 1));
+
+const readProgress = (): ProgressState => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(progressKey) ?? 'null') as ProgressState | null;
+    if (parsed && Number.isInteger(parsed.unlocked) && Array.isArray(parsed.completed)) return parsed;
+  } catch {
+    // A damaged save should fall back to a fresh campaign.
+  }
+  return { unlocked: 1, completed: [] };
+};
+
+let progress = readProgress();
+
+const setRoundPanelOpen = (open: boolean): void => {
+  roundPanel.hidden = !open;
+  window.dispatchEvent(new CustomEvent('echo-menu-state', { detail: open }));
+};
+
+const renderRoundGrid = (): void => {
+  roundsButton.innerHTML = `ROUNDS <b>${String(currentRound).padStart(2, '0')}/36</b>`;
+  roundGrid.innerHTML = Array.from({ length: 6 }, (_, chapterIndex) => {
+    const chapterLevels = LEVELS.slice(chapterIndex * 6, chapterIndex * 6 + 6);
+    const cards = chapterLevels.map((level) => {
+      const locked = level.number > progress.unlocked;
+      const complete = progress.completed.includes(level.number);
+      const state = locked ? 'locked' : complete ? 'complete' : 'available';
+      return `<button class="round-card ${state}${currentRound === level.number ? ' current' : ''}"
+        data-round="${level.number}" ${locked ? 'disabled' : ''}>
+        <span>${String(level.number).padStart(2, '0')}</span>
+        <b>${level.name}</b>
+        <small>${locked ? 'LOCKED' : complete ? 'STABLE' : `${level.parEchoes} ECHO PAR`}</small>
+      </button>`;
+    }).join('');
+    return `<div class="chapter-block">
+      <header><span>CH ${String(chapterIndex + 1).padStart(2, '0')}</span><b>${chapterLevels[0].chapterName}</b></header>
+      <div>${cards}</div>
+    </div>`;
+  }).join('');
+
+  for (const card of roundGrid.querySelectorAll<HTMLButtonElement>('[data-round]:not([disabled])')) {
+    card.addEventListener('click', () => {
+      const round = Number(card.dataset.round);
+      currentRound = round;
+      renderRoundGrid();
+      setRoundPanelOpen(false);
+      window.dispatchEvent(new CustomEvent('echo-select-round', { detail: round }));
+    });
+  }
+};
+
+renderRoundGrid();
+roundsButton.addEventListener('click', () => {
+  setRoundPanelOpen(roundPanel.hasAttribute('hidden'));
+});
+document.querySelector<HTMLButtonElement>('#round-panel-close')!.addEventListener('click', () => {
+  setRoundPanelOpen(false);
+});
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') setRoundPanelOpen(false);
+});
+window.addEventListener('echo-progress', (event) => {
+  progress = (event as CustomEvent<ProgressState>).detail;
+  renderRoundGrid();
+});
+window.addEventListener('echo-round-changed', (event) => {
+  currentRound = Number((event as CustomEvent<number>).detail);
+  renderRoundGrid();
+});
+
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-control]')) {
   const control = button.dataset.control!;
   const down = (event: Event) => {
     event.preventDefault();
-    button.setPointerCapture?.((event as PointerEvent).pointerId);
+    try {
+      button.setPointerCapture?.((event as PointerEvent).pointerId);
+    } catch {
+      // Pointer capture is optional; synthetic and some mobile pointers may reject it.
+    }
     window.dispatchEvent(new CustomEvent('echo-control-down', { detail: control }));
   };
   const up = (event: Event) => {

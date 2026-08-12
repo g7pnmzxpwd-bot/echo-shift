@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:campaign": "node scripts/campaign-smoke.mjs && node scripts/multi-echo-playthrough.mjs && node scripts/mobile-smoke.mjs",
+    "test:playthrough": "node scripts/playthrough.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {

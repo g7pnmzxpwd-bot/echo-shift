@@ -41,6 +41,18 @@ describe('EchoTimeline', () => {
     expect(timeline.echoFrame(0, 999)).toEqual(frame(5));
   });
 
+  it('can discard only the current attempt while preserving committed echoes', () => {
+    const timeline = new EchoTimeline(10);
+    timeline.record(frame(1));
+    timeline.commit();
+    timeline.record(frame(9));
+    timeline.discardCurrent();
+
+    expect(timeline.echoCount).toBe(1);
+    expect(timeline.currentLength).toBe(0);
+    expect(timeline.echoFrame(0, 0)).toEqual(frame(1));
+  });
+
   it('can clear all echoes when restarting the level', () => {
     const timeline = new EchoTimeline(10);
     timeline.record(frame(1));
