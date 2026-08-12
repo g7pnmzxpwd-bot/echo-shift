@@ -240,7 +240,9 @@ export class GameScene extends Phaser.Scene {
 
     for (const gate of this.level.gates) {
       const open = gate.requiresPlateIds.every((id) => this.pressedPlateIds.has(id));
+      const previous = this.gateStates.get(gate.id);
       this.gateStates.set(gate.id, open);
+      if (this.started && previous !== undefined && previous !== open) this.audioCue(open ? 'gate-open' : 'gate-close');
       const view = this.gateViews.find((item) => item.definition.id === gate.id)!;
       this.updateGateView(view, open);
       this.drawGateWires(view);
@@ -270,6 +272,7 @@ export class GameScene extends Phaser.Scene {
       if (!this.won) this.statusText.setText('STABILIZE ALL PLATES');
     });
     this.flash(colors.cyan, 140);
+    this.audioCue('echo');
   }
 
   private resetCurrentAttempt(): void {
@@ -300,6 +303,7 @@ export class GameScene extends Phaser.Scene {
     this.objectiveText.setText('LOCK ECHOES ON EVERY PLATE → REACH EXIT');
     this.statusText.setText('TIMELINE CLEARED');
     this.updateMechanisms();
+    this.audioCue('reset');
   }
 
   private reachedExit(): boolean {
@@ -321,6 +325,7 @@ export class GameScene extends Phaser.Scene {
     this.statusText.setText('PARADOX RESOLVED');
     this.objectiveText.setText(`ROUND ${String(this.level.number).padStart(2, '0')} COMPLETE · ${this.timeline.echoCount} ECHOES`);
     this.flash(colors.lime, 400);
+    this.audioCue('victory');
     this.tweens.add({ targets: this.player.root, scale: 1.35, duration: 180, yoyo: true, repeat: 2 });
     this.winOverlayTimer = this.time.delayedCall(650, () => {
       this.winOverlayTimer = null;
@@ -543,6 +548,7 @@ export class GameScene extends Phaser.Scene {
       document.documentElement.dataset.echoPhase = 'playing';
       this.intro.destroy();
       this.statusText.setText('STABILIZE ALL PLATES');
+      this.audioCue('start');
     };
     this.input.once('pointerdown', begin);
     this.input.keyboard!.once('keydown-ENTER', begin);
@@ -569,6 +575,10 @@ export class GameScene extends Phaser.Scene {
 
   private flash(color: number, duration: number): void {
     this.cameras.main.flash(duration, (color >> 16) & 255, (color >> 8) & 255, color & 255, false);
+  }
+
+  private audioCue(cue: string): void {
+    window.dispatchEvent(new CustomEvent('echo-audio-cue', { detail: cue }));
   }
 
   private saveCompletion(): void {

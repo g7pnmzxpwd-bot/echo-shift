@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
 import './style.css';
+import { AudioEngine, type AudioCue } from './audio/AudioEngine';
 import { GameScene } from './game/GameScene';
 import { LEVELS } from './game/levels/levels';
 import { readProgress, type ProgressState } from './game/progression/ProgressStore';
@@ -10,6 +11,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <header class="masthead">
       <div class="brand"><span class="brand-mark"></span>ECHO//SHIFT</div>
       <div class="masthead-actions">
+        <button id="sound-button" class="sound-button" type="button" aria-pressed="false">SOUND ON</button>
         <button id="rounds-button" class="rounds-button" type="button">ROUNDS <b>01/36</b></button>
         <div class="signal"><span></span>TIMELINE LINK ACTIVE</div>
       </div>
@@ -79,6 +81,25 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 new Phaser.Game(config);
+
+const audio = new AudioEngine(localStorage);
+const soundButton = document.querySelector<HTMLButtonElement>('#sound-button')!;
+const renderSoundState = (): void => {
+  soundButton.textContent = audio.muted ? 'SOUND OFF' : 'SOUND ON';
+  soundButton.setAttribute('aria-pressed', String(audio.muted));
+};
+renderSoundState();
+const unlockAudio = () => { void audio.unlock(); };
+window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+window.addEventListener('keydown', unlockAudio, { once: true, capture: true });
+soundButton.addEventListener('click', () => {
+  void audio.unlock();
+  audio.toggleMuted();
+  renderSoundState();
+});
+window.addEventListener('echo-audio-cue', (event) => {
+  void audio.unlock().then(() => audio.cue((event as CustomEvent<AudioCue>).detail));
+});
 
 const roundPanel = document.querySelector<HTMLElement>('#round-panel')!;
 const roundGrid = document.querySelector<HTMLElement>('#round-grid')!;
