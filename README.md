@@ -6,6 +6,8 @@ ECHO//SHIFT is a browser-based time-loop puzzle game. Every shift records the pl
 
 Built for **OpenAI Game Builders Seoul 2026** with Codex.
 
+**Play:** https://g7pnmzxpwd-bot.github.io/echo-shift/
+
 ## 36-round campaign
 
 The playable campaign contains **six chapters of six rounds**:
@@ -45,7 +47,7 @@ npm run test:playthrough
 npm run test:campaign
 ```
 
-The browser suite uses locally installed Google Chrome. It completes round 1, loads representative rounds from every chapter, validates the 36-card campaign selector, and solves real two-, three-, and four-echo rounds.
+The browser suite completes round 1, loads representative rounds from every chapter, validates the 36-card campaign selector, solves real two-, three-, and four-echo rounds, and runs the mobile touch flow in Chromium and WebKit.
 
 ## Technical design
 
@@ -73,9 +75,10 @@ The browser suite uses locally installed Google Chrome. It completes round 1, lo
 - [x] Keyboard and touch controls
 - [x] Campaign matrix and direct round QA links
 - [x] Static geometry validation and automated browser playthroughs
-- [ ] Sound and music
-- [ ] Direct human balance pass across the complete campaign
-- [ ] Production deployment and 3-minute submission video
+- [x] Procedural Web Audio cues with persistent mute control
+- [x] Representative difficulty and synchronization balance pass
+- [x] Production deployment and sub-3-minute submission video
+- [ ] Full 36-round human playtest and physical-device Safari QA
 
 ## Credits
 

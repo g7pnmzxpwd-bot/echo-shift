@@ -47,3 +47,11 @@ The 36-round core campaign is implemented. Before submission, prioritize direct 
 - procedural level generation,
 - cinematic cutscenes,
 - backend account requirements.
+
+## Submission-ready assets
+
+- Public game: https://g7pnmzxpwd-bot.github.io/echo-shift/
+- Public source: https://github.com/g7pnmzxpwd-bot/echo-shift
+- Demo video: https://g7pnmzxpwd-bot.github.io/echo-shift/echo-shift-game-builders-2026.mp4
+- Thumbnail: `submission/echo-shift-thumbnail.jpg`
+- Form-ready Korean copy and verified checklist: `submission/SUBMISSION_READY.md`
