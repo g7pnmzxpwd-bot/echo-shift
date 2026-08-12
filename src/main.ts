@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import './style.css';
 import { GameScene } from './game/GameScene';
 import { LEVELS } from './game/levels/levels';
+import { readProgress, type ProgressState } from './game/progression/ProgressStore';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <main class="shell">
@@ -79,24 +80,14 @@ const config: Phaser.Types.Core.GameConfig = {
 
 new Phaser.Game(config);
 
-type ProgressState = { unlocked: number; completed: number[] };
-const progressKey = 'echo-shift-progress-v1';
 const roundPanel = document.querySelector<HTMLElement>('#round-panel')!;
 const roundGrid = document.querySelector<HTMLElement>('#round-grid')!;
 const roundsButton = document.querySelector<HTMLButtonElement>('#rounds-button')!;
-let currentRound = Math.max(1, Math.min(36, Number(new URLSearchParams(location.search).get('round')) || 1));
-
-const readProgress = (): ProgressState => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(progressKey) ?? 'null') as ProgressState | null;
-    if (parsed && Number.isInteger(parsed.unlocked) && Array.isArray(parsed.completed)) return parsed;
-  } catch {
-    // A damaged save should fall back to a fresh campaign.
-  }
-  return { unlocked: 1, completed: [] };
-};
-
-let progress = readProgress();
+const launchParams = new URLSearchParams(location.search);
+const qaMode = launchParams.get('qa') === '1';
+const requestedRound = Math.max(1, Math.min(LEVELS.length, Number(launchParams.get('round')) || 1));
+let progress = readProgress(localStorage, LEVELS.length);
+let currentRound = qaMode ? requestedRound : Math.min(requestedRound, progress.unlocked);
 
 const setRoundPanelOpen = (open: boolean): void => {
   roundPanel.hidden = !open;

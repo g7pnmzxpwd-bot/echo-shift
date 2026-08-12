@@ -3,13 +3,14 @@ import Phaser from 'phaser';
 import { LEVELS, levelByNumber } from './levels/levels';
 import type { GateDefinition, LevelDefinition, PlateDefinition, Rect } from './levels/types';
 import { EchoTimeline, type Facing } from './loop/EchoTimeline';
+import { completeRound, readProgress, writeProgress } from './progression/ProgressStore';
 
 const WIDTH = 960;
 const HEIGHT = 600;
 const FIXED_MS = 50;
 const PLAYER_SPEED_PER_TICK = 9;
 const PLAYER_SIZE = 24;
-const PROGRESS_KEY = 'echo-shift-progress-v1';
+
 
 const boundaryWalls: Rect[] = [
   { x: 30, y: 72, width: 900, height: 20 },
@@ -46,7 +47,7 @@ type GateView = {
   segments: Phaser.GameObjects.Rectangle[];
   wire: Phaser.GameObjects.Graphics;
 };
-type ProgressState = { unlocked: number; completed: number[] };
+
 
 export class GameScene extends Phaser.Scene {
   private levelIndex = 0;
@@ -66,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private won = false;
   private started = false;
   private menuOpen = false;
+  private qaMode = false;
   private timerText!: Phaser.GameObjects.Text;
   private echoText!: Phaser.GameObjects.Text;
   private plateText!: Phaser.GameObjects.Text;
@@ -74,6 +76,7 @@ export class GameScene extends Phaser.Scene {
   private intro!: Phaser.GameObjects.Container;
   private winOverlay: Phaser.GameObjects.Container | null = null;
   private winOverlayTimer: Phaser.Time.TimerEvent | null = null;
+  private statusTimer: Phaser.Time.TimerEvent | null = null;
   private trailGraphics!: Phaser.GameObjects.Graphics;
   private playerTrail: { x: number; y: number }[] = [];
   private virtual = { up: false, down: false, left: false, right: false };
@@ -83,8 +86,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data?: { levelIndex?: number }): void {
-    const queryRound = Number(new URLSearchParams(window.location.search).get('round'));
-    const requestedIndex = data?.levelIndex ?? (Number.isFinite(queryRound) && queryRound > 0 ? queryRound - 1 : 0);
+    const params = new URLSearchParams(window.location.search);
+    const queryRound = Number(params.get('round'));
+    this.qaMode = params.get('qa') === '1';
+    const queryIndex = Number.isFinite(queryRound) && queryRound > 0 ? queryRound - 1 : 0;
+    const unlockedIndex = readProgress(localStorage, LEVELS.length).unlocked - 1;
+    const requestedIndex = data?.levelIndex ?? (this.qaMode ? queryIndex : Math.min(queryIndex, unlockedIndex));
     this.levelIndex = Phaser.Math.Clamp(Math.floor(requestedIndex), 0, LEVELS.length - 1);
     this.level = levelByNumber(this.levelIndex + 1);
     this.timeline = new EchoTimeline((this.level.loopSeconds * 1000) / FIXED_MS);
@@ -103,6 +110,9 @@ export class GameScene extends Phaser.Scene {
     this.playerTrail = [];
     this.winOverlay = null;
     this.winOverlayTimer = null;
+    this.statusTimer?.remove(false);
+    this.statusTimer = null;
+    delete document.documentElement.dataset.echoCompleted;
   }
 
   create(): void {
@@ -254,7 +264,9 @@ export class GameScene extends Phaser.Scene {
     this.resetCurrentAttempt();
     this.echoText.setText(`${String(this.timeline.echoCount).padStart(2, '0')}/${String(this.level.echoCap).padStart(2, '0')}`);
     this.statusText.setText('ECHO LOCKED · NEW SHIFT');
-    this.time.delayedCall(900, () => {
+    this.statusTimer?.remove(false);
+    this.statusTimer = this.time.delayedCall(900, () => {
+      this.statusTimer = null;
       if (!this.won) this.statusText.setText('STABILIZE ALL PLATES');
     });
     this.flash(colors.cyan, 140);
@@ -270,6 +282,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private restartLevel(): void {
+    this.statusTimer?.remove(false);
+    this.statusTimer = null;
     this.winOverlayTimer?.remove(false);
     this.winOverlayTimer = null;
     this.winOverlay?.destroy();
@@ -299,6 +313,10 @@ export class GameScene extends Phaser.Scene {
 
   private completeLevel(): void {
     this.won = true;
+    this.statusTimer?.remove(false);
+    this.statusTimer = null;
+    document.documentElement.dataset.echoPhase = 'complete';
+    document.documentElement.dataset.echoCompleted = String(this.level.number);
     this.saveCompletion();
     this.statusText.setText('PARADOX RESOLVED');
     this.objectiveText.setText(`ROUND ${String(this.level.number).padStart(2, '0')} COMPLETE · ${this.timeline.echoCount} ECHOES`);
@@ -502,6 +520,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createIntro(): void {
+    document.documentElement.dataset.echoRound = String(this.level.number);
+    document.documentElement.dataset.echoPhase = 'intro';
     const shade = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x05070f, 0.88);
     const title = this.add.text(WIDTH / 2, 194, this.level.number === 1 ? 'YOUR PAST IS THE KEY' : `ROUND ${String(this.level.number).padStart(2, '0')} · ${this.level.name}`, {
       fontFamily: '"Space Mono", monospace', fontSize: this.level.number === 1 ? '38px' : '30px', color: '#ffffff',
@@ -520,6 +540,7 @@ export class GameScene extends Phaser.Scene {
     const begin = () => {
       if (this.started) return;
       this.started = true;
+      document.documentElement.dataset.echoPhase = 'playing';
       this.intro.destroy();
       this.statusText.setText('STABILIZE ALL PLATES');
     };
@@ -550,25 +571,10 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.flash(duration, (color >> 16) & 255, (color >> 8) & 255, color & 255, false);
   }
 
-  private readProgress(): ProgressState {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(PROGRESS_KEY) ?? 'null') as ProgressState | null;
-      if (parsed && Number.isInteger(parsed.unlocked) && Array.isArray(parsed.completed)) return parsed;
-    } catch {
-      // Corrupt local progress should never prevent play.
-    }
-    return { unlocked: 1, completed: [] };
-  }
-
   private saveCompletion(): void {
-    const progress = this.readProgress();
-    progress.unlocked = Math.min(LEVELS.length, Math.max(progress.unlocked, this.level.number + 1));
-    progress.completed = [...new Set([...progress.completed, this.level.number])].sort((a, b) => a - b);
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-    } catch {
-      // Private browsing or quota failures must not prevent a completed run.
-    }
+    if (this.qaMode) return;
+    const progress = completeRound(readProgress(localStorage, LEVELS.length), this.level.number, LEVELS.length);
+    writeProgress(localStorage, progress, LEVELS.length);
     window.dispatchEvent(new CustomEvent('echo-progress', { detail: progress }));
   }
 
@@ -587,6 +593,7 @@ export class GameScene extends Phaser.Scene {
   private onSelectRound = (event: Event): void => {
     const round = Number((event as CustomEvent<number>).detail);
     if (!Number.isInteger(round) || round < 1 || round > LEVELS.length) return;
+    if (!this.qaMode && round > readProgress(localStorage, LEVELS.length).unlocked) return;
     this.scene.restart({ levelIndex: round - 1 });
   };
 

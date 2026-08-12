@@ -83,3 +83,13 @@ This log separates human creative decisions from Codex-assisted implementation f
 - BFS proves static reachability, not enjoyment or ideal difficulty.
 - Three representative multi-echo rounds were solved automatically; the full 36 still require a direct human balance pass.
 - Sound, public deployment, and submission video remain outside this milestone.
+
+## 2026-08-12 — Independent review hardening 00.03.1
+
+- Gated direct round loading behind explicit `qa=1`; normal deep links now respect the sequential unlock boundary.
+- Prevented QA-mode completions from mutating the real campaign save.
+- Replaced duplicated weak progress parsing with a tested `ProgressStore` that derives unlock state from contiguous completion.
+- Added DOM phase markers so browser tests wait for intro/play/complete state instead of racing canvas startup.
+- Added a fresh-profile regression proving `?round=36` resolves to round 1 with 35 cards locked.
+- Cancelled delayed HUD status callbacks during restart and completion.
+- Verification after review: 14/14 unit tests, production build, campaign smoke, 2/3/4-echo solutions, keyboard round-1 playthrough, and mobile touch completion all passed.

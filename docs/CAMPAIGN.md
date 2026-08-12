@@ -37,7 +37,9 @@ The scene has no round-specific coordinates. It creates walls, circuits, plate c
 - Completion and highest unlocked round are stored in `localStorage` under `echo-shift-progress-v1`.
 - The campaign matrix shows six chapter blocks and all 36 rounds.
 - Cards distinguish locked, available, complete, and current states.
-- `?round=N` directly loads a round for deterministic QA and review links.
+- `?round=N&qa=1` directly loads a round for deterministic QA and review captures without writing completion to the campaign save.
+- A normal `?round=N` URL is clamped to the highest sequentially unlocked round.
+- Invalid, manipulated, or non-contiguous saves are normalized back to the contiguous completion prefix.
 
 ## Automated guarantees
 
@@ -56,8 +58,8 @@ The reachability checks use a player-radius-aware grid BFS. This proves static g
 
 Browser tests add runtime evidence:
 
-- `campaign-smoke.mjs` loads rounds 1, 7, 13, 19, 25, 31, and 36 and validates the 36-card selector.
-- `multi-echo-playthrough.mjs` solves rounds 7, 19, and 36 with real keyboard input, proving two-, three-, and four-echo gate coordination plus persisted completion.
+- `campaign-smoke.mjs` loads rounds 1, 7, 13, 19, 25, 31, and 36 in isolated QA mode, validates the 36-card selector, and proves that a fresh normal `?round=36` request remains locked to round 1.
+- `multi-echo-playthrough.mjs` solves rounds 7, 19, and 36 with real keyboard input, proving two-, three-, and four-echo gate coordination plus completion-state emission without mutating the save.
 - `mobile-smoke.mjs` completes round 1 through the DOM touch controls at 390×844 and validates the mobile 36-card selector.
 - `playthrough.mjs` solves round 1 and verifies victory restart.
 

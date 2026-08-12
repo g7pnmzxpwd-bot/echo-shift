@@ -52,9 +52,10 @@ const shift = async () => {
 };
 
 for (const round of rounds) {
-  await page.goto(`${baseUrl}/?round=${round.number}`, { waitUntil: 'networkidle' });
-  await page.locator('canvas').click({ position: { x: 480, y: 300 } });
-  await page.waitForTimeout(120);
+  await page.goto(`${baseUrl}/?round=${round.number}&qa=1`, { waitUntil: 'networkidle' });
+  await page.locator('html[data-echo-phase="intro"]').waitFor();
+  await page.keyboard.press('Enter');
+  await page.locator('html[data-echo-phase="playing"]').waitFor();
   for (const target of round.plates) {
     let position = { ...round.spawn };
     position = await move(position, target);
@@ -64,11 +65,7 @@ for (const round of rounds) {
   let position = { ...round.spawn };
   for (const target of round.route) position = await move(position, target);
   await page.waitForTimeout(900);
-  const completed = await page.evaluate(() => JSON.parse(localStorage.getItem('echo-shift-progress-v1') ?? '{}').completed ?? []);
-  if (!completed.includes(round.number)) {
-    await page.screenshot({ path: `/tmp/echo-shift-round-${round.number}-failed.png`, fullPage: true });
-    throw new Error(`Round ${round.number} was not completed; completed=${JSON.stringify(completed)}`);
-  }
+  await page.locator(`html[data-echo-completed="${round.number}"]`).waitFor({ timeout: 3000 });
 }
 
 console.log(JSON.stringify({ errors, solved: rounds.map((round) => round.number) }));
