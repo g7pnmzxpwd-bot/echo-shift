@@ -93,3 +93,13 @@ This log separates human creative decisions from Codex-assisted implementation f
 - Added a fresh-profile regression proving `?round=36` resolves to round 1 with 35 cards locked.
 - Cancelled delayed HUD status callbacks during restart and completion.
 - Verification after review: 14/14 unit tests, production build, campaign smoke, 2/3/4-echo solutions, keyboard round-1 playthrough, and mobile touch completion all passed.
+
+## 2026-08-12 — Difficulty curve rebalance 00.03.2
+
+- Player feedback correctly identified that later rounds became easier despite more objects: chapter 5 increased loop time to 17 seconds, plates stayed in simple parking rows, and the two gates did not add new reasoning stages.
+- Reauthored rounds 13–36 as true staged-access puzzles: two gates from chapter 3, three sequential gates from chapter 4, mixed-orientation three-stage routing in chapter 5, and four cumulative gates in chapter 6.
+- Later echoes must now wait for earlier echoes to open access, then cross the opening before turning toward their own plate; simple independent parking no longer solves representative late rounds.
+- Added fixed-point staged reachability validation that rejects a gate whose required plate is trapped behind itself.
+- Added a difficulty contract test covering average decision steps, gate-stage counts, loop budgets, and shrinking openings.
+- Updated real-browser solution certificates for rounds 19 and 36 with synchronized delays and gate-crossing waypoints.
+- Structural escalation is automated; subjective enjoyment and exact frustration level still require human full-campaign playtesting.

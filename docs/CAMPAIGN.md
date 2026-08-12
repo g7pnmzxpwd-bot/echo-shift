@@ -8,10 +8,10 @@ The campaign is organized as six chapters of six rounds. Every round is defined 
 | --- | ---: | --- | ---: | --- |
 | 1 | 01–06 | Calibration | 1 | Learn one plate, one gate, and route variation |
 | 2 | 07–12 | Dual Signal | 2 | Hold two distant plates simultaneously |
-| 3 | 13–18 | Cross Current | 2 | Cross horizontal barriers through side channels |
-| 4 | 19–24 | Phase Array | 3 | Satisfy staged requirements across two gates |
-| 5 | 25–30 | Time Compression | 3 | Navigate a two-gate zigzag under a longer route budget |
-| 6 | 31–36 | Full Chorus | 4 | Coordinate four color-coded echoes through a two-stage finale |
+| 3 | 13–18 | Cross Current | 2 | Two-stage access: echo one opens the route for echo two |
+| 4 | 19–24 | Phase Array | 3 | Synchronize three echoes through three sequential zones |
+| 5 | 25–30 | Time Compression | 3 | Change direction across mixed vertical/horizontal staged gates |
+| 6 | 31–36 | Full Chorus | 4 | Coordinate four echoes through four cumulative, narrowing gates |
 
 Each round varies plate locations, gate openings, path orientation, loop time, and dependency graph. Later gates may require more plates than earlier gates, so the room visibly opens in stages.
 
@@ -58,6 +58,8 @@ The reachability checks use a player-radius-aware grid BFS. This proves static g
 
 Browser tests add runtime evidence:
 
+- Multi-stage reachability validator repeatedly collects reachable plates, opens gates whose dependencies are satisfiable, and rejects cyclic trapped-plate layouts.
+- Authored difficulty contract prevents later chapters from reducing average plate-plus-gate decision steps; chapter finales also cannot gain loop time or wider first-gate openings.
 - `campaign-smoke.mjs` loads rounds 1, 7, 13, 19, 25, 31, and 36 in isolated QA mode, validates the 36-card selector, and proves that a fresh normal `?round=36` request remains locked to round 1.
 - `multi-echo-playthrough.mjs` solves rounds 7, 19, and 36 with real keyboard input, proving two-, three-, and four-echo gate coordination plus completion-state emission without mutating the save.
 - `mobile-smoke.mjs` completes round 1 through the DOM touch controls at 390×844 and validates the mobile 36-card selector.

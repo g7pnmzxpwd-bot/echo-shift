@@ -17,20 +17,37 @@ const rounds = [
   {
     number: 7,
     spawn: { x: 105, y: 486 },
-    plates: [{ x: 170, y: 170 }, { x: 360, y: 420 }],
+    runs: [
+      { delay: 0, route: [{ x: 170, y: 170 }] },
+      { delay: 0, route: [{ x: 360, y: 420 }] },
+    ],
+    finalDelay: 4200,
     route: [{ x: 470, y: 435 }, { x: 855, y: 435 }],
   },
   {
     number: 19,
-    spawn: { x: 92, y: 500 },
-    plates: [{ x: 130, y: 160 }, { x: 285, y: 285 }, { x: 155, y: 455 }],
-    route: [{ x: 350, y: 446 }, { x: 500, y: 446 }, { x: 500, y: 206 }, { x: 850, y: 206 }],
+    spawn: { x: 88, y: 456 },
+    runs: [
+      { delay: 0, route: [{ x: 155, y: 180 }] },
+      { delay: 2200, route: [{ x: 410, y: 456 }, { x: 410, y: 275 }] },
+      { delay: 5200, route: [{ x: 620, y: 456 }, { x: 620, y: 185 }] },
+    ],
+    finalDelay: 0,
+    finalHoldMs: 12500,
+    route: [],
   },
   {
     number: 36,
-    spawn: { x: 82, y: 515 },
-    plates: [{ x: 115, y: 145 }, { x: 295, y: 220 }, { x: 125, y: 410 }, { x: 300, y: 490 }],
-    route: [{ x: 320, y: 414 }, { x: 500, y: 414 }, { x: 500, y: 289 }, { x: 855, y: 289 }],
+    spawn: { x: 82, y: 404 },
+    runs: [
+      { delay: 0, route: [{ x: 225, y: 240 }] },
+      { delay: 2000, route: [{ x: 355, y: 404 }, { x: 355, y: 440 }] },
+      { delay: 4200, route: [{ x: 590, y: 404 }, { x: 590, y: 165 }] },
+      { delay: 7600, route: [{ x: 715, y: 404 }, { x: 715, y: 350 }] },
+    ],
+    finalDelay: 0,
+    finalHoldMs: 13000,
+    route: [],
   },
 ];
 
@@ -56,16 +73,23 @@ for (const round of rounds) {
   await page.locator('html[data-echo-phase="intro"]').waitFor();
   await page.keyboard.press('Enter');
   await page.locator('html[data-echo-phase="playing"]').waitFor();
-  for (const target of round.plates) {
+  for (const run of round.runs) {
     let position = { ...round.spawn };
-    position = await move(position, target);
+    if (run.delay > 0) await page.waitForTimeout(run.delay);
+    for (const target of run.route) position = await move(position, target);
     await shift();
   }
-  await page.waitForTimeout(4200);
+  await page.waitForTimeout(round.finalDelay);
   let position = { ...round.spawn };
   for (const target of round.route) position = await move(position, target);
+  if (round.finalHoldMs) await hold('ArrowRight', round.finalHoldMs);
   await page.waitForTimeout(900);
-  await page.locator(`html[data-echo-completed="${round.number}"]`).waitFor({ timeout: 3000 });
+  try {
+    await page.locator(`html[data-echo-completed="${round.number}"]`).waitFor({ timeout: 3000 });
+  } catch (error) {
+    await page.screenshot({ path: `/tmp/echo-shift-round-${round.number}-failed.png`, fullPage: true });
+    throw error;
+  }
 }
 
 console.log(JSON.stringify({ errors, solved: rounds.map((round) => round.number) }));

@@ -24,10 +24,10 @@ const rectInsideBounds = (rect: Rect): boolean =>
   rect.x + rect.width <= PLAY_BOUNDS.x + PLAY_BOUNDS.width &&
   rect.y + rect.height <= PLAY_BOUNDS.y + PLAY_BOUNDS.height;
 
-const reachable = (level: LevelDefinition, target: Point, includeClosedGates: boolean): boolean => {
+const reachable = (level: LevelDefinition, target: Point, closedGateIds: Set<string>): boolean => {
   const colliders = [
     ...level.walls,
-    ...(includeClosedGates ? level.gates.map((gate) => gate.rect) : []),
+    ...level.gates.filter((gate) => closedGateIds.has(gate.id)).map((gate) => gate.rect),
   ];
   const columns = Math.floor((PLAY_BOUNDS.width - PLAYER_RADIUS * 2) / GRID_STEP) + 1;
   const rows = Math.floor((PLAY_BOUNDS.height - PLAYER_RADIUS * 2) / GRID_STEP) + 1;
@@ -90,12 +90,38 @@ export const validateLevel = (level: LevelDefinition): string[] => {
     if (level.walls.some((wall) => pointHitsRect(plate, 34, wall))) {
       errors.push(`${level.id}: plate ${plate.id} overlaps a wall`);
     }
-    if (!reachable(level, plate, true)) errors.push(`${level.id}: plate ${plate.id} unreachable with gates closed`);
   }
   if (level.walls.some((wall) => pointHitsRect(level.spawn, PLAYER_RADIUS, wall))) {
     errors.push(`${level.id}: spawn overlaps a wall`);
   }
-  if (!reachable(level, level.exit, false)) errors.push(`${level.id}: exit unreachable with gates open`);
+  const reachablePlateIds = new Set<string>();
+  const openGateIds = new Set<string>();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const closedGateIds = new Set(level.gates.filter((gate) => !openGateIds.has(gate.id)).map((gate) => gate.id));
+    for (const plate of level.plates) {
+      if (!reachablePlateIds.has(plate.id) && reachable(level, plate, closedGateIds)) {
+        reachablePlateIds.add(plate.id);
+        changed = true;
+      }
+    }
+    for (const gate of level.gates) {
+      if (!openGateIds.has(gate.id) && gate.requiresPlateIds.every((plateId) => reachablePlateIds.has(plateId))) {
+        openGateIds.add(gate.id);
+        changed = true;
+      }
+    }
+  }
+  for (const plate of level.plates) {
+    if (!reachablePlateIds.has(plate.id)) {
+      errors.push(`${level.id}: plate ${plate.id} unreachable through staged gates`);
+    }
+  }
+  const remainingClosedGates = new Set(level.gates.filter((gate) => !openGateIds.has(gate.id)).map((gate) => gate.id));
+  if (!reachable(level, level.exit, remainingClosedGates)) {
+    errors.push(`${level.id}: exit unreachable through staged gates`);
+  }
   return errors;
 };
 

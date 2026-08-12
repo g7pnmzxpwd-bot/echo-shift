@@ -128,107 +128,112 @@ const makeChapterTwo = (variant: number): LevelDefinition => {
 };
 
 const makeChapterThree = (variant: number): LevelDefinition => {
-  const y = [330, 302, 350, 286, 365, 318][variant];
-  const openingX = [748, 690, 790, 720, 650, 770][variant];
+  const laneY = [458, 430, 470, 414, 446, 398][variant];
+  const openingHeight = [96, 88, 80, 72, 64, 58][variant];
   const positions: Point[][] = [
-    [{ x: 180, y: 470 }, { x: 430, y: 490 }],
-    [{ x: 250, y: 430 }, { x: 610, y: 500 }],
-    [{ x: 150, y: 420 }, { x: 500, y: 470 }],
-    [{ x: 330, y: 450 }, { x: 650, y: 490 }],
-    [{ x: 180, y: 470 }, { x: 570, y: 430 }],
-    [{ x: 280, y: 470 }, { x: 620, y: 460 }],
+    [{ x: 170, y: 190 }, { x: 500, y: 235 }],
+    [{ x: 215, y: 420 }, { x: 545, y: 170 }],
+    [{ x: 145, y: 285 }, { x: 470, y: 470 }],
+    [{ x: 235, y: 160 }, { x: 565, y: 330 }],
+    [{ x: 155, y: 430 }, { x: 490, y: 190 }],
+    [{ x: 245, y: 245 }, { x: 570, y: 430 }],
   ];
   const plates = positions[variant].map((point, index) => plate(`p${index + 1}`, point, index));
-  const barrier = horizontalBarrier('g1', y, openingX, 82, plates.map((item) => item.id));
+  const first = verticalBarrier('g1', 360, laneY - openingHeight / 2, openingHeight, ['p1']);
+  const second = verticalBarrier('g2', 670, laneY - openingHeight / 2, openingHeight, ['p1', 'p2']);
   return levelBase(variant + 13, 3, variant, {
-    loopSeconds: 14,
+    loopSeconds: [14, 14, 13, 13, 12, 12][variant],
     echoCap: 2,
     parEchoes: 2,
-    spawn: { x: 100, y: 510 },
-    exit: { x: 845, y: 150 },
-    walls: barrier.walls,
+    spawn: { x: 92, y: laneY },
+    exit: { x: 858, y: laneY },
+    walls: [...first.walls, ...second.walls],
     plates,
-    gates: [barrier.gate],
+    gates: [first.gate, second.gate],
   });
 };
 
 const makeChapterFour = (variant: number): LevelDefinition => {
-  const firstOpening = [410, 380, 430, 350, 405, 370][variant];
-  const secondOpening = [170, 210, 150, 230, 180, 250][variant];
+  const laneY = [456, 422, 470, 404, 440, 386][variant];
+  const openingHeight = [94, 86, 78, 70, 62, 56][variant];
   const points: Point[][] = [
-    [{ x: 130, y: 160 }, { x: 285, y: 285 }, { x: 155, y: 455 }],
-    [{ x: 160, y: 220 }, { x: 315, y: 145 }, { x: 285, y: 455 }],
-    [{ x: 135, y: 440 }, { x: 305, y: 315 }, { x: 170, y: 170 }],
-    [{ x: 180, y: 150 }, { x: 320, y: 250 }, { x: 160, y: 430 }],
-    [{ x: 140, y: 280 }, { x: 300, y: 150 }, { x: 310, y: 455 }],
-    [{ x: 160, y: 170 }, { x: 310, y: 300 }, { x: 150, y: 455 }],
+    [{ x: 155, y: 180 }, { x: 410, y: 275 }, { x: 620, y: 185 }],
+    [{ x: 205, y: 425 }, { x: 385, y: 155 }, { x: 625, y: 390 }],
+    [{ x: 135, y: 300 }, { x: 420, y: 470 }, { x: 600, y: 170 }],
+    [{ x: 220, y: 155 }, { x: 390, y: 330 }, { x: 630, y: 440 }],
+    [{ x: 145, y: 430 }, { x: 425, y: 180 }, { x: 605, y: 300 }],
+    [{ x: 225, y: 235 }, { x: 390, y: 440 }, { x: 635, y: 155 }],
   ];
   const plates = points[variant].map((point, index) => plate(`p${index + 1}`, point, index));
-  const first = verticalBarrier('g1', 400, firstOpening, 72, plates.slice(0, 2).map((item) => item.id));
-  const second = verticalBarrier('g2', 650, secondOpening, 72, plates.map((item) => item.id));
+  const first = verticalBarrier('g1', 300, laneY - openingHeight / 2, openingHeight, ['p1']);
+  const second = verticalBarrier('g2', 520, laneY - openingHeight / 2, openingHeight, ['p1', 'p2']);
+  const third = verticalBarrier('g3', 740, laneY - openingHeight / 2, openingHeight, ['p1', 'p2', 'p3']);
   return levelBase(variant + 19, 4, variant, {
-    loopSeconds: 15,
+    loopSeconds: [15, 14, 14, 13, 13, 12][variant],
     echoCap: 3,
     parEchoes: 3,
-    spawn: { x: 92, y: 500 },
-    exit: { x: 850, y: secondOpening + 36 },
-    walls: [...first.walls, ...second.walls],
+    spawn: { x: 88, y: laneY },
+    exit: { x: 862, y: laneY },
+    walls: [...first.walls, ...second.walls, ...third.walls],
     plates,
-    gates: [first.gate, second.gate],
+    gates: [first.gate, second.gate, third.gate],
   });
 };
 
 const makeChapterFive = (variant: number): LevelDefinition => {
-  const lowerY = [400, 390, 420, 382, 410, 396][variant];
-  const upperY = [235, 250, 220, 260, 242, 215][variant];
-  const lowerOpening = [740, 680, 770, 710, 650, 790][variant];
-  const upperOpening = [120, 170, 105, 210, 145, 190][variant];
+  const laneY = [470, 452, 482, 438, 462, 424][variant];
+  const verticalHeight = [92, 84, 76, 68, 62, 56][variant];
+  const horizontalWidth = [104, 94, 86, 78, 70, 62][variant];
+  const upperY = [320, 306, 334, 292, 314, 280][variant];
   const points: Point[][] = [
-    [{ x: 160, y: 475 }, { x: 390, y: 500 }, { x: 610, y: 470 }],
-    [{ x: 130, y: 500 }, { x: 350, y: 455 }, { x: 600, y: 500 }],
-    [{ x: 180, y: 500 }, { x: 430, y: 500 }, { x: 650, y: 500 }],
-    [{ x: 140, y: 460 }, { x: 370, y: 510 }, { x: 620, y: 470 }],
-    [{ x: 210, y: 490 }, { x: 450, y: 490 }, { x: 680, y: 500 }],
-    [{ x: 150, y: 500 }, { x: 400, y: 470 }, { x: 640, y: 490 }],
+    [{ x: 155, y: 430 }, { x: 455, y: 475 }, { x: 610, y: 190 }],
+    [{ x: 215, y: 425 }, { x: 430, y: 452 }, { x: 640, y: 165 }],
+    [{ x: 140, y: 450 }, { x: 470, y: 490 }, { x: 590, y: 205 }],
+    [{ x: 225, y: 410 }, { x: 440, y: 438 }, { x: 650, y: 250 }],
+    [{ x: 150, y: 430 }, { x: 480, y: 470 }, { x: 600, y: 155 }],
+    [{ x: 235, y: 400 }, { x: 445, y: 424 }, { x: 655, y: 220 }],
   ];
   const plates = points[variant].map((point, index) => plate(`p${index + 1}`, point, index));
-  const lower = horizontalBarrier('g1', lowerY, lowerOpening, 76, plates.slice(0, 2).map((item) => item.id));
-  const upper = horizontalBarrier('g2', upperY, upperOpening, 76, plates.map((item) => item.id));
+  const first = verticalBarrier('g1', 300, laneY - verticalHeight / 2, verticalHeight, ['p1']);
+  const second = horizontalBarrier('g2', upperY, 420, horizontalWidth, ['p1', 'p2']);
+  const third = verticalBarrier('g3', 740, 140, 92 - variant * 6, ['p1', 'p2', 'p3']);
   return levelBase(variant + 25, 5, variant, {
-    loopSeconds: 17,
+    loopSeconds: [15, 14, 14, 13, 13, 12][variant],
     echoCap: 3,
     parEchoes: 3,
-    spawn: { x: 90, y: 520 },
-    exit: { x: 850, y: 145 },
-    walls: [...lower.walls, ...upper.walls],
+    spawn: { x: 88, y: laneY },
+    exit: { x: 858, y: 180 },
+    walls: [...first.walls, ...second.walls, ...third.walls],
     plates,
-    gates: [lower.gate, upper.gate],
+    gates: [first.gate, second.gate, third.gate],
   });
 };
 
 const makeChapterSix = (variant: number): LevelDefinition => {
-  const firstOpening = [420, 390, 435, 365, 410, 380][variant];
-  const secondOpening = [165, 210, 145, 235, 185, 255][variant];
+  const laneY = [470, 446, 482, 426, 456, 404][variant];
+  const openingHeight = [94, 86, 78, 70, 62, 56][variant];
   const points: Point[][] = [
-    [{ x: 110, y: 150 }, { x: 275, y: 210 }, { x: 120, y: 390 }, { x: 285, y: 480 }],
-    [{ x: 130, y: 185 }, { x: 290, y: 135 }, { x: 150, y: 350 }, { x: 300, y: 470 }],
-    [{ x: 110, y: 430 }, { x: 270, y: 335 }, { x: 130, y: 150 }, { x: 300, y: 225 }],
-    [{ x: 140, y: 150 }, { x: 295, y: 250 }, { x: 120, y: 410 }, { x: 290, y: 490 }],
-    [{ x: 120, y: 270 }, { x: 285, y: 145 }, { x: 150, y: 450 }, { x: 305, y: 360 }],
-    [{ x: 115, y: 145 }, { x: 295, y: 220 }, { x: 125, y: 410 }, { x: 300, y: 490 }],
+    [{ x: 145, y: 180 }, { x: 365, y: 285 }, { x: 555, y: 175 }, { x: 725, y: 320 }],
+    [{ x: 215, y: 420 }, { x: 345, y: 155 }, { x: 575, y: 390 }, { x: 730, y: 180 }],
+    [{ x: 135, y: 275 }, { x: 380, y: 475 }, { x: 540, y: 225 }, { x: 735, y: 430 }],
+    [{ x: 220, y: 155 }, { x: 350, y: 330 }, { x: 585, y: 460 }, { x: 730, y: 210 }],
+    [{ x: 145, y: 430 }, { x: 385, y: 180 }, { x: 545, y: 310 }, { x: 740, y: 155 }],
+    [{ x: 225, y: 240 }, { x: 355, y: 440 }, { x: 590, y: 165 }, { x: 715, y: 350 }],
   ];
   const plates = points[variant].map((point, index) => plate(`p${index + 1}`, point, index));
-  const first = verticalBarrier('g1', 360, firstOpening, 68, plates.slice(0, 2).map((item) => item.id));
-  const second = verticalBarrier('g2', 635, secondOpening, 68, plates.map((item) => item.id));
+  const first = verticalBarrier('g1', 280, laneY - openingHeight / 2, openingHeight, ['p1']);
+  const second = verticalBarrier('g2', 470, laneY - openingHeight / 2, openingHeight, ['p1', 'p2']);
+  const third = verticalBarrier('g3', 650, laneY - openingHeight / 2, openingHeight, ['p1', 'p2', 'p3']);
+  const fourth = verticalBarrier('g4', 810, laneY - openingHeight / 2, openingHeight, plates.map((item) => item.id));
   return levelBase(variant + 31, 6, variant, {
-    loopSeconds: 16,
+    loopSeconds: [16, 16, 15, 15, 14, 14][variant],
     echoCap: 4,
     parEchoes: 4,
-    spawn: { x: 82, y: 515 },
-    exit: { x: 855, y: secondOpening + 34 },
-    walls: [...first.walls, ...second.walls],
+    spawn: { x: 82, y: laneY },
+    exit: { x: 872, y: laneY },
+    walls: [...first.walls, ...second.walls, ...third.walls, ...fourth.walls],
     plates,
-    gates: [first.gate, second.gate],
+    gates: [first.gate, second.gate, third.gate, fourth.gate],
   });
 };
 
